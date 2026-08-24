@@ -1,51 +1,14 @@
-city,store_id,store_name,total_revenue,store_rank
-Abu Dhabi,49,BlueMart Store 49,1413751.74,1
-Abu Dhabi,4,BlueMart Store 04,1412071.72,2
-Abu Dhabi,18,BlueMart Store 18,1395933.55,3
-Abu Dhabi,29,BlueMart Store 29,1390884.1,4
-Abu Dhabi,48,BlueMart Store 48,1387805.49,5
-Abu Dhabi,31,BlueMart Store 31,1386482.86,6
-Abu Dhabi,46,BlueMart Store 46,1383329.75,7
-Abu Dhabi,21,BlueMart Store 21,1382040.47,8
-Abu Dhabi,26,BlueMart Store 26,1380418.9,9
-Abu Dhabi,10,BlueMart Store 10,1376590.17,10
-Abu Dhabi,28,BlueMart Store 28,1371532.22,11
-Abu Dhabi,9,BlueMart Store 09,1361479.71,12
-Abu Dhabi,39,BlueMart Store 39,1355494.85,13
-Abu Dhabi,3,BlueMart Store 03,1346116.57,14
-Dubai,41,BlueMart Store 41,1413674.59,1
-Dubai,11,BlueMart Store 11,1411272.39,2
-Dubai,37,BlueMart Store 37,1404705.44,3
-Dubai,17,BlueMart Store 17,1400495.19,4
-Dubai,19,BlueMart Store 19,1398322.96,5
-Dubai,32,BlueMart Store 32,1395923.64,6
-Dubai,50,BlueMart Store 50,1395391.61,7
-Dubai,7,BlueMart Store 07,1394814.81,8
-Dubai,15,BlueMart Store 15,1394028.77,9
-Dubai,5,BlueMart Store 05,1392241.35,10
-Dubai,14,BlueMart Store 14,1391831.89,11
-Dubai,24,BlueMart Store 24,1389427.86,12
-Dubai,33,BlueMart Store 33,1387921.17,13
-Dubai,6,BlueMart Store 06,1386975.51,14
-Dubai,40,BlueMart Store 40,1385318.79,15
-Dubai,16,BlueMart Store 16,1384269.93,16
-Dubai,43,BlueMart Store 43,1377317.21,17
-Dubai,45,BlueMart Store 45,1376892.25,18
-Dubai,22,BlueMart Store 22,1375238.86,19
-Dubai,25,BlueMart Store 25,1374862.97,20
-Dubai,20,BlueMart Store 20,1372397.67,21
-Dubai,38,BlueMart Store 38,1372241.93,22
-Dubai,30,BlueMart Store 30,1372021.14,23
-Dubai,23,BlueMart Store 23,1365481.69,24
-Dubai,47,BlueMart Store 47,1364826.96,25
-Dubai,1,BlueMart Store 01,1356871.12,26
-Dubai,27,BlueMart Store 27,1354656.72,27
-Dubai,42,BlueMart Store 42,1351306.37,28
-Sharjah,44,BlueMart Store 44,1409875.94,1
-Sharjah,35,BlueMart Store 35,1403202.58,2
-Sharjah,8,BlueMart Store 08,1401332.24,3
-Sharjah,13,BlueMart Store 13,1384180.37,4
-Sharjah,34,BlueMart Store 34,1363547.01,5
-Sharjah,2,BlueMart Store 02,1353759.09,6
-Sharjah,12,BlueMart Store 12,1351401.88,7
-Sharjah,36,BlueMart Store 36,1350404.15,8
+issue_type,issue_count
+NULL customer_id,159821
+NULL date,0
+NULL store_id,0
+NULL sku_id,0
+NULL quantity,0
+NULL unit_price,0
+NULL discount_pct,0
+NULL total_value,0
+NULL channel,0
+quantity <= 0,0
+unit_price <= 0,0
+discount_pct outside 0-100,0
+negative total_value,0

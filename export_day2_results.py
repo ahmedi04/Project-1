@@ -7,6 +7,7 @@ Purpose:
     and export each result set to a separate CSV file in the day2_results/ folder.
 
 Requirements:
+    - sqlalchemy
     - mysql-connector-python
     - pandas
     - python-dotenv
@@ -24,14 +25,14 @@ Output:
 import os
 import sys
 import re
-from pathlib import Path
 
 try:
-    import mysql.connector
-    from mysql.connector import Error
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.engine import URL
+    from sqlalchemy.pool import NullPool
 except ImportError:
-    print("ERROR: mysql-connector-python is not installed.")
-    print("Install it with: pip3 install mysql-connector-python")
+    print("ERROR: sqlalchemy is not installed.")
+    print("Install it with: pip3 install sqlalchemy")
     sys.exit(1)
 
 try:
@@ -53,11 +54,11 @@ except ImportError:
 load_dotenv()
 
 # Database configuration from .env
-DB_HOST = os.getenv("MYSQL_HOST", "localhost")
-DB_USER = os.getenv("MYSQL_USER")
+DB_HOST     = os.getenv("MYSQL_HOST", "localhost")
+DB_PORT     = int(os.getenv("MYSQL_PORT", "3306"))
+DB_USER     = os.getenv("MYSQL_USER")
 DB_PASSWORD = os.getenv("MYSQL_PASSWORD")
-DB_NAME = "retail_db"
-DB_PORT = int(os.getenv("MYSQL_PORT", "3306"))
+DB_NAME     = "retail_db"
 
 # Output folder for CSV files
 OUTPUT_FOLDER = "day2_results"
@@ -76,7 +77,7 @@ def validate_credentials():
     """Validate that required database credentials are available."""
     if not DB_USER or not DB_PASSWORD:
         print("ERROR: Database credentials not found in .env file.")
-        print("Please set DB_USER and DB_PASSWORD in .env")
+        print("Please set MYSQL_USER and MYSQL_PASSWORD in .env")
         sys.exit(1)
 
 
@@ -109,158 +110,168 @@ def read_sql_file(filename="day2_aggregations.sql"):
         content = f.read()
     
     queries = {}
-    
-    # Step 1: Find all -- Query N: markers and their positions
-    # This handles markers anywhere in the line (start, middle, end)
-    query_markers = {}
-    for match in re.finditer(r"-- Query (\d+):", content):
-        query_num = int(match.group(1))
-        query_markers[query_num] = match.start()
-    
+
+    # Step 1: Find all -- Query N: markers and their positions.
+    # Use the full comment line in the pattern so marker_end lands at end-of-line.
+    marker_pattern = re.compile(r"-- Query (\d+):\s*[^\n]*", re.IGNORECASE)
+    markers = [(int(m.group(1)), m.start(), m.end()) for m in marker_pattern.finditer(content)]
+
+    # Build a plain dict of marker start positions for the Query-8 special case
+    query_markers = {qn: sp for qn, sp, _me in markers}
+
+    def split_statements(block):
+        """
+        Split a SQL block into individual statements by semicolons.
+        Returns a list of non-empty, non-setup statement strings (no trailing semicolons).
+        Strips comment-only lines before checking each part.
+        """
+        parts = block.split(";")
+        stmts = []
+        for part in parts:
+            # Remove pure comment lines, then check if real SQL remains
+            code = re.sub(r"--[^\n]*", "", part).strip()
+            if not code:
+                continue
+            stmt = part.strip()
+            if not stmt:
+                continue
+            first_kw = stmt.split()[0].upper() if stmt.split() else ""
+            if first_kw in ("USE", "SHOW", "DESCRIBE", "DESC"):
+                continue
+            stmts.append(stmt)
+        return stmts
+
     # Step 2: Extract text for each marked query
-    sorted_queries = sorted(query_markers.keys())
-    for i, query_num in enumerate(sorted_queries):
-        start_pos = query_markers[query_num]
-        
-        # Find end position: start of next query marker OR end of file
-        if i < len(sorted_queries) - 1:
-            end_pos = query_markers[sorted_queries[i + 1]]
+    for i, (query_num, start_pos, marker_end) in enumerate(markers):
+        # SQL ends at start of next marker, or end of file
+        sql_end = markers[i + 1][1] if i + 1 < len(markers) else len(content)
+
+        # Detect a SQL keyword glued directly to the description text
+        # e.g. "...categorySELECT c.city" — (?<=[a-zA-Z]) requires a preceding letter
+        comment_line_end = content.find("\n", start_pos)
+        if comment_line_end == -1:
+            comment_line_end = marker_end
+        comment_line = content[start_pos:comment_line_end]
+        inline_sql = re.search(r'(?<=[a-zA-Z])(SELECT|WITH)\b', comment_line, re.IGNORECASE)
+        if inline_sql:
+            sql_start = start_pos + inline_sql.start()
         else:
-            end_pos = len(content)
-        
-        # Extract text starting after the comment marker
-        # Find the end of the comment line
-        comment_end = content.find("\n", start_pos)
-        if comment_end == -1:
-            comment_end = start_pos
-        
-        # Extract from after the comment line to next marker/end
-        sql_text = content[comment_end + 1:end_pos].strip()
-        sql_text = sql_text.rstrip("; \n\t")
-        
-        # Skip empty or setup statement queries
-        if sql_text and not re.match(r"^\s*(USE|SHOW|DESCRIBE)", sql_text, re.IGNORECASE):
-            queries[query_num] = sql_text
-    
-    # Step 3: Handle Query 8 if missing (orphaned SQL between Query 7 and 9)
-    # Query 8 might not have a -- Query 8: marker
+            sql_start = marker_end
+
+        block = content[sql_start:sql_end]
+        stmts = split_statements(block)
+
+        # A marker maps to the FIRST real statement in its block.
+        # If multiple statements are present (e.g. Query 7's block also contains
+        # the orphaned Query 8 UNION ALL), only the first is assigned here;
+        # the second will be picked up by the Query-8 special case below.
+        if stmts:
+            queries[query_num] = stmts[0]
+
+    # Step 3: Handle Query 8 if missing (orphaned SQL between Query 7 and 9).
+    # Query 8 might not have a -- Query 8: marker; in that case it is the second
+    # statement in the block that follows the -- Query 7: marker.
     if 7 in queries and 9 in queries and 8 not in queries:
-        # Find the position after Query 7 marker and before Query 9 marker
         query_7_pos = query_markers.get(7)
         query_9_pos = query_markers.get(9)
-        
-        if query_7_pos and query_9_pos:
-            # Move past Query 7's comment line
+
+        if query_7_pos is not None and query_9_pos is not None:
             after_query_7_comment = content.find("\n", query_7_pos) + 1
-            
-            # Find the next query marker position after Query 7
-            # (This would be the Query 9 marker)
-            between_text = content[after_query_7_comment:query_9_pos]
-            
-            # Extract the last statement before Query 9 (Query 8)
-            # It could be after the previous query's semicolon
-            sql_text = between_text.strip()
-            sql_text = sql_text.rstrip("; \n\t")
-            
-            if sql_text and not re.match(r"^\s*(USE|SHOW|DESCRIBE)", sql_text, re.IGNORECASE):
-                queries[8] = sql_text
-    
+            between_block = content[after_query_7_comment:query_9_pos]
+            stmts = split_statements(between_block)
+
+            # stmts[0] is already assigned as Query 7; stmts[1] (if present) is Query 8
+            if len(stmts) >= 2:
+                queries[8] = stmts[1]
+            elif len(stmts) == 1 and 7 not in queries:
+                queries[8] = stmts[0]
+
     # Step 4: Validate exactly 10 queries
     if not queries:
         print("ERROR: No SQL queries found in SQL file.")
         print(f"File: {filename}")
         print("Ensure queries are formatted as: -- Query 1: Description")
         sys.exit(1)
-    
+
     query_count = len(queries)
     print(f"Found {query_count} queries: {sorted(queries.keys())}")
-    
+
     if query_count != 10:
         print(f"ERROR: Expected exactly 10 queries, but found {query_count}")
         print(f"File: {filename}")
         print(f"Found query numbers: {sorted(queries.keys())}")
         sys.exit(1)
-    
+
     return queries
 
 
-def connect_to_database():
+def build_engine():
     """
-    Establish connection to MySQL database.
-    
+    Build a SQLAlchemy engine using URL.create() for safe URL construction.
+
     Returns:
-        MySQL connection object
+        SQLAlchemy Engine
     """
+    connection_url = URL.create(
+        drivername="mysql+mysqlconnector",
+        username=DB_USER,
+        password=DB_PASSWORD,
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_NAME,
+    )
+    # NullPool: every engine.connect() opens a brand-new physical connection
+    # and closes it completely on exit — prevents "Commands out of sync" errors
+    # that occur when mysql-connector reuses a connection with pending result state.
+    engine = create_engine(connection_url, poolclass=NullPool)
+    return engine
+
+
+def test_connection(engine):
+    """Verify the engine can open a connection."""
     try:
-        connection = mysql.connector.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            database=DB_NAME
-        )
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
         print(f"✓ Connected to {DB_NAME} at {DB_HOST}:{DB_PORT}")
-        return connection
-    except Error as e:
+    except Exception as e:
         print(f"ERROR: Failed to connect to database: {e}")
         sys.exit(1)
 
 
-def execute_query(connection, query_num, sql_text):
+def execute_and_export(engine, query_num, sql_text):
     """
-    Execute a single SQL query and return results as a pandas DataFrame.
-    Reconnects to database if connection is lost.
-    
-    Args:
-        connection: MySQL connection object (may be reconnected)
-        query_num: Query number (for logging)
-        sql_text: SQL query text
-        
-    Returns:
-        Tuple of (connection, DataFrame) where DataFrame is query results or None if fails
-    """
-    try:
-        # Check if connection is still alive
-        if not connection.is_connected():
-            print(f"  ⚠ Reconnecting to database (connection lost)...")
-            connection = connect_to_database()
-        
-        df = pd.read_sql(sql_text, connection)
-        print(f"  ✓ Query {query_num}: {len(df)} rows retrieved")
-        return connection, df
-    except Exception as e:
-        print(f"  ✗ Query {query_num} FAILED: {e}")
-        # Try to reconnect for next query
-        try:
-            connection.close()
-        except:
-            pass
-        return connection, None
+    Execute one SQL query via SQLAlchemy and export results to CSV.
+    Uses NullPool (set on engine) so the physical connection is fully closed
+    after each query — no stale result state can bleed into the next query.
 
-
-def export_query_result(query_num, df):
-    """
-    Export query result DataFrame to CSV file.
-    
     Args:
-        query_num: Query number (for filename)
-        df: pandas DataFrame to export
-        
+        engine:     SQLAlchemy Engine (must use NullPool)
+        query_num:  Query number used for the output filename
+        sql_text:   SQL string to execute
+
     Returns:
-        True if successful, False otherwise
+        (success: bool, error_msg: str|None)
+        success is True only when the CSV was actually written to disk.
     """
-    if df is None or df.empty:
-        print(f"  ✗ Skipping empty result for Query {query_num}")
-        return False
-    
     filename = os.path.join(OUTPUT_FOLDER, f"day2_query{query_num}.csv")
     try:
+        with engine.connect() as conn:
+            df = pd.read_sql(text(sql_text), conn)
+
+        print(f"  ✓ Query {query_num}: {len(df)} rows retrieved")
+
         df.to_csv(filename, index=False)
+        if not os.path.exists(filename):
+            raise IOError(f"CSV file was not created: {filename}")
+
         print(f"  ✓ Exported to: {filename}")
-        return True
+        return True, None
+
     except Exception as e:
-        print(f"  ✗ Export FAILED for Query {query_num}: {e}")
-        return False
+        error_lines = str(e).strip().splitlines()
+        short_error = error_lines[0] if error_lines else str(e)
+        print(f"  ✗ Query {query_num} FAILED: {short_error}")
+        return False, short_error
 
 
 def main():
@@ -270,75 +281,72 @@ def main():
     print("=" * 60)
     print()
     
-    # Validate setup
+    # Step 1: Validate credentials
     print("1. Validating credentials...")
     validate_credentials()
     print()
-    
-    # Create output folder
+
+    # Step 2: Create output folder
     print("2. Setting up output folder...")
     create_output_folder()
     print()
-    
-    # Read SQL file
+
+    # Step 3: Parse SQL file
     print("3. Reading SQL queries from day2_aggregations.sql...")
     queries = read_sql_file()
-    print(f"✓ Found {len(queries)} queries (expected 10)")
-    
-    # Verify exactly 10 queries
-    if len(queries) != 10:
-        print(f"ERROR: Expected exactly 10 queries, found {len(queries)}")
-        print(f"Query numbers found: {sorted(queries.keys())}")
-        sys.exit(1)
-    
-    print(f"✓ Query validation passed")
+    query_count = len(queries)
+    print(f"✓ Found {query_count} Day 2 queries: {sorted(queries.keys())}")
     print(f"✓ Will create files: day2_query1.csv through day2_query10.csv")
     print()
-    
-    # Connect to database
+
+    # Step 4: Build engine and verify connection
     print("4. Connecting to database...")
-    connection = connect_to_database()
+    engine = build_engine()
+    test_connection(engine)
     print()
-    
-    # Execute queries and export results
+
+    # Step 5: Execute each query and export
     print("5. Executing queries and exporting results...")
-    success_count = 0
-    failed_count = 0
-    
+    succeeded = []   # query numbers that exported successfully
+    failed    = {}   # query_num -> error message
+
     for query_num in sorted(queries.keys()):
-        sql_text = queries[query_num]
         print(f"\nProcessing Query {query_num}...")
-        
-        # Execute query (may reconnect internally if needed)
-        connection, df = execute_query(connection, query_num, sql_text)
-        
-        # Export to CSV if successful
-        if df is not None and not df.empty:
-            if export_query_result(query_num, df):
-                success_count += 1
+        ok, err = execute_and_export(engine, query_num, queries[query_num])
+        if ok:
+            succeeded.append(query_num)
         else:
-            failed_count += 1
-    
-    # Close database connection
-    try:
-        connection.close()
-    except:
-        pass
+            failed[query_num] = err
+
+    # NullPool: dispose is a no-op but kept for explicitness
+    engine.dispose()
     print()
-    
-    # Summary
+
+    # Step 6: Summary
     print("=" * 60)
-    total_queries = len(queries)
-    if success_count == total_queries:
-        print(f"✓ SUCCESS: {success_count}/{total_queries} queries exported")
+    print(f"Total queries found : {query_count}")
+    print(f"Exported successfully: {len(succeeded)}")
+    print(f"Failed              : {len(failed)}")
+    print()
+
+    if succeeded:
+        print(f"✓ Successful queries : {succeeded}")
+    if failed:
+        print(f"✗ Failed queries     : {sorted(failed.keys())}")
+        print()
+        print("Failure details:")
+        for qn in sorted(failed.keys()):
+            print(f"  Query {qn}: {failed[qn]}")
+
+    print()
+    if len(succeeded) == query_count:
+        print(f"✓ SUCCESS: {len(succeeded)}/{query_count} queries exported successfully")
     else:
-        print(f"✗ INCOMPLETE: {success_count}/{total_queries} queries exported successfully")
-        if failed_count > 0:
-            print(f"  {failed_count} queries failed")
+        print(f"✗ INCOMPLETE: {len(succeeded)}/{query_count} queries exported successfully")
     print(f"Results saved to: {os.path.abspath(OUTPUT_FOLDER)}/")
     print("=" * 60)
-    
-    if success_count < total_queries:
+
+    if len(succeeded) < query_count:
         sys.exit(1)
 
 

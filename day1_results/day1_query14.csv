@@ -1,0 +1,11 @@
+sku_id,sku_name,category,subcategory,unit_price,cost_price,brand
+1035,Electronics_Batteries_1035,Electronics,Batteries,245.38,139.58,Premium
+1174,Electronics_Mobile Accessories_1174,Electronics,Mobile Accessories,240.85,141.42,Premium
+1072,Electronics_Chargers_1072,Electronics,Chargers,238.26,187.67,Budget
+1199,Electronics_Cables_1199,Electronics,Cables,229.89,150.51,Premium
+1019,Electronics_Cables_1019,Electronics,Cables,211.86,152.31,Local
+1164,Electronics_Cables_1164,Electronics,Cables,196.24,126.3,BlueMart
+1078,Electronics_Cables_1078,Electronics,Cables,179.73,102.12,Local
+1037,Electronics_Cables_1037,Electronics,Cables,178.57,123.66,BlueMart
+1159,Electronics_Batteries_1159,Electronics,Batteries,178.08,122.11,Premium
+1065,Electronics_Chargers_1065,Electronics,Chargers,177.83,113.29,International

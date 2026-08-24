@@ -1,0 +1,21 @@
+city,category,avg_unit_price
+Dubai,Electronics,115.536543
+Abu Dhabi,Electronics,115.129145
+Sharjah,Electronics,114.520505
+Abu Dhabi,Personal Care,45.580226
+Sharjah,Personal Care,45.537495
+Dubai,Personal Care,45.52273
+Sharjah,Household,33.416354
+Abu Dhabi,Household,33.14953
+Dubai,Household,33.113822
+Abu Dhabi,Grocery,27.158094
+Dubai,Grocery,27.152188
+Sharjah,Grocery,27.01093
+Abu Dhabi,Dairy,20.588834
+Dubai,Dairy,20.546913
+Sharjah,Dairy,20.531565
+Abu Dhabi,Beverages,14.740705
+Sharjah,Beverages,14.632
+Dubai,Beverages,14.582743
+Abu Dhabi,Snacks,13.501091
+Dubai,Snacks,13.480458

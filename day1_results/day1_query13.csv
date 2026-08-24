@@ -1,0 +1,11 @@
+cust_id,age,gender,city,loyalty_segment,preferred_channel,registration_date
+93,60,Female,Dubai,Gold,Website,2024-11-28
+176,60,Female,Abu Dhabi,Gold,Website,2023-02-23
+16,60,Female,Abu Dhabi,Silver,Store,2022-02-13
+282,60,Male,Abu Dhabi,Silver,Website,2025-07-15
+109,60,Male,Abu Dhabi,Gold,Store,2021-12-17
+59,60,Female,Sharjah,Gold,Website,2022-05-20
+214,60,Male,Dubai,Silver,Store,2022-03-15
+66,60,Male,Dubai,Silver,Website,2024-09-24
+79,60,Male,Dubai,Gold,Store,2025-07-23
+233,60,Female,Dubai,Silver,Store,2025-03-31

@@ -1,0 +1,5 @@
+customer_segment,customer_count,average_recency_days,average_frequency,average_monetary,total_monetary
+Lost,2224,21.85,86.4,9167.43,20388361.46
+At Risk,1020,49.04,95.34,11002.13,11222173.45
+Champions,908,7.57,102.25,11986.84,10884052.01
+Loyal,848,19.45,100.84,10967.43,9300377.31

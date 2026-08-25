@@ -1,0 +1,45 @@
+metric_category,metric_name,dimension_value,metric_value,unit
+Overall Performance,Total Revenue,All,69102366.14,Currency
+Overall Performance,Average Comparable-SKU Monthly Revenue,All,512808.57,Currency
+Overall Performance,Highest Comparable-SKU Monthly Revenue,2024-02,1386609.95,Currency
+Overall Performance,Lowest Comparable-SKU Monthly Revenue,2022-04,1941.35,Currency
+Geography,City Revenue,Dubai,38740730.8,Currency
+Geography,City Revenue Share,Dubai,56.06,Percentage
+Geography,City Revenue,Abu Dhabi,19343932.08,Currency
+Geography,City Revenue Share,Abu Dhabi,27.99,Percentage
+Geography,City Revenue,Sharjah,11017703.26,Currency
+Geography,City Revenue Share,Sharjah,15.94,Percentage
+Product Performance,Top Category Revenue,Electronics,38510406.54,Currency
+Product Performance,Top Category Revenue,Household,7727105.23,Currency
+Product Performance,Top Category Revenue,Personal Care,7721304.5,Currency
+Product Performance,Top Category Revenue,Grocery,5250629.73,Currency
+Product Performance,Top Category Revenue,Snacks,4077580.33,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Chargers_1065,539497.58,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Batteries_1173,541805.4,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Cables_1164,563038.22,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Cables_1078,564265.7,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Cables_1199,599768.41,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Cables_1037,601517.32,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Cables_1019,619682.34,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Mobile Accessories_1174,631112.71,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Chargers_1072,708446.54,Currency
+Product Performance,Top Comparable-SKU Product Revenue,Electronics_Batteries_1035,758132.9,Currency
+Customer Performance,Total Customers,All,5000.0,Count
+Customer Performance,Repeat Customers,All,5000.0,Count
+Customer Performance,Repeat Purchase Rate,All,100.0,Percentage
+RFM Segments,Segment Customer Count,Lost,2224.0,Count
+RFM Segments,Segment Customer Share,Lost,44.48,Percentage
+RFM Segments,Segment Customer Count,At Risk,1020.0,Count
+RFM Segments,Segment Customer Share,At Risk,20.4,Percentage
+RFM Segments,Segment Customer Count,Champions,908.0,Count
+RFM Segments,Segment Customer Share,Champions,18.16,Percentage
+RFM Segments,Segment Customer Count,Loyal,848.0,Count
+RFM Segments,Segment Customer Share,Loyal,16.96,Percentage
+Promotion Performance,Period Total Revenue,During Promotion,41058514.43,Currency
+Promotion Performance,Avg Revenue per Transaction,During Promotion,120.44,Currency
+Promotion Performance,Period Total Revenue,Outside Promotion,28043974.84,Currency
+Promotion Performance,Avg Revenue per Transaction,Outside Promotion,93.19,Currency
+Retention,Avg Retention Rate,Month 1,78.89,Percentage
+Retention,Avg Retention Rate,Month 3,79.45,Percentage
+Retention,Avg Retention Rate,Month 6,79.34,Percentage
+Retention,Avg Retention Rate,Month 12,80.18,Percentage

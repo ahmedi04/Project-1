@@ -64,3 +64,14 @@ Full exploratory data analysis, business visualizations, a Power BI-ready metric
 4. Click **Run All** — cells execute sequentially from top to bottom
 
 > **Note:** The notebook must be run from the `Project-1` root folder so that relative paths to `day2_results/`, `rfm_segment_summary.csv`, and `cohort_retention.csv` resolve correctly.
+
+---
+
+## Database Connection
+
+The project connects to the MySQL `retail_db` database in two ways:
+
+- Python scripts use SQLAlchemy with credentials securely loaded from a local `.env` file.
+- VS Code uses SQLTools for direct SQL execution and Results Grid viewing.
+
+The `.env` file and local `.vscode` connection settings are excluded from GitHub to protect database credentials.
